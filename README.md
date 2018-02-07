@@ -1,7 +1,6 @@
 # `paragraphoi`
 
-Analysis of paragraphoi and organizing punctuation in Homeric Mss
-folio.
+Analysis of *paragraphoi* and organizing punctuation in Homeric Mss.
 
 
 ## Files in the `chunked-data` directory
