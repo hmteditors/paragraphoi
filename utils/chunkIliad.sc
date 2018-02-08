@@ -4,32 +4,45 @@ import scala.io.Source
 import java.io.PrintWriter
 import java.io.File
 
-val f = "iliad.cex"
+val f = "iliads.cex"
 val index = "paragraph-index.csv"
-val repo = TextRepositorySource.fromCexFile(f)
-val iliad = repo.corpus ~~ CtsUrn("urn:cts:greekLit:tlg0012.tlg001:")
-val lines = Source.fromFile(index).getLines.toVector
+val wheng = CtsUrn("urn:cts:greekLit:tlg0012.tlg001.wheng:")
 
-// read second column with URN from file.
-// omit null entries for replacement pages
-val refOptions = for (l <- lines.tail) yield {
-  def cols = l.split(",")
-  if (cols.size > 1) {
-    val urn = CtsUrn(cols(1))
-    Some(urn)
-  } else {
-    None
+def paragraphReferences(indexFile: String) = {//: Vector[CtsUrn] = {
+  val lines = Source.fromFile(indexFile).getLines.toVector
+  // read second column with URN from file.
+  // omit null entries for replacement pages
+
+
+  val refOptions = for (l <- lines.tail) yield {
+    def cols = l.split(",")
+    if (cols.size > 1) {
+      val urn = CtsUrn(cols(1))
+      Some(urn)
+    } else {
+      None
+    }
   }
+  refOptions.flatten
+
 }
 
-// write text contents for each URN
-for (urn <- refOptions.flatten.tail) {
+def writeOutput(iliad: Corpus, urns: Vector[CtsUrn], fileBase: String): Unit = {
+  for (urn <- urns.tail.take(10)) {
     val psg =   iliad ~~ urn
     val contents = psg.nodes.map(_.text).mkString("\n")
-    new PrintWriter(new File(docName)){write(contents);close}
-    println("Wrote " + contents + "to " + docName)
+    val fileName = fileBase + "-" + urn.passageComponent + ".txt"
+    new PrintWriter(new File(fileName)){write(contents);close}
+    println("Wrote " + contents + "to " + fileName)
   }
 }
 
-//
-//psg1.nodes.map(_.text).mkString("\n")
+
+
+def chunkVersion(cexFile: String, indexFile: String, iliadUrn: CtsUrn): Unit = {
+  val repo = TextRepositorySource.fromCexFile(cexFile)
+  val iliad = repo.corpus ~~ iliadUrn
+  val lines = Source.fromFile(index).getLines.toVector
+  val urns = paragraphReferences(indexFile)
+  writeOutput(iliad, urns, "iliad-" + iliadUrn.version)
+}
